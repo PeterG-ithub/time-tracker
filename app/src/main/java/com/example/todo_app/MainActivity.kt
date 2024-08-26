@@ -9,12 +9,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -78,18 +80,20 @@ fun TodoApp() {
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    isTaskInputVisible = !isTaskInputVisible
-                },
-                modifier = Modifier.padding(16.dp),
-                containerColor = MaterialTheme.colorScheme.primary
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Add Task",
-                    tint = Color.White
-                )
+            if (!isTaskInputVisible) { // Hide the plus sign when the input field is visible
+                FloatingActionButton(
+                    onClick = {
+                        isTaskInputVisible = true
+                    },
+                    modifier = Modifier.padding(16.dp),
+                    containerColor = MaterialTheme.colorScheme.primary
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Add Task",
+                        tint = Color.White
+                    )
+                }
             }
         },
         content = { innerPadding ->
@@ -97,16 +101,15 @@ fun TodoApp() {
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(16.dp)
             ) {
                 TaskList(
                     tasks = tasks,
                     onTaskComplete = { index, isCompleted -> tasks[index] = tasks[index].copy(isCompleted = isCompleted) },
-                    onDeleteTask = { index -> tasks.removeAt(index) }
+                    onDeleteTask = { index -> tasks.removeAt(index) },
+                    modifier = Modifier.weight(1f)  // Make the list take up available space
                 )
 
                 if (isTaskInputVisible) {
-                    Spacer(modifier = Modifier.height(16.dp))
                     TaskInput(
                         task = newTask,
                         onTaskChange = { newTask = it },
@@ -116,7 +119,11 @@ fun TodoApp() {
                                 newTask = ""
                                 isTaskInputVisible = false // Hide input after adding the task
                             }
-                        }
+                        },
+                        modifier = Modifier
+                            .imePadding()  // Adjust layout when the keyboard is visible
+                            .fillMaxWidth()
+                            .padding(16.dp)  // Adjust padding as needed
                     )
                 }
             }
@@ -125,7 +132,12 @@ fun TodoApp() {
 }
 
 @Composable
-fun TaskInput(task: String, onTaskChange: (String) -> Unit, onAddTask: () -> Unit) {
+fun TaskInput(
+    task: String,
+    onTaskChange: (String) -> Unit,
+    onAddTask: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
 
@@ -133,57 +145,69 @@ fun TaskInput(task: String, onTaskChange: (String) -> Unit, onAddTask: () -> Uni
         focusRequester.requestFocus()  // Request focus as soon as the TaskInput is composed
     }
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
+    Column(
+        modifier = modifier
+            .background(Color.White)  // Optional: Add a background color for better visibility
+            .clip(RoundedCornerShape(8.dp))  // Rounded corners for a clean look
+            .padding(8.dp)  // Add padding inside the container
             .imePadding()  // Adjust layout when the keyboard is visible
-            .padding(bottom = 16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+            .fillMaxWidth()
+            .wrapContentHeight()
     ) {
-        BasicTextField(
-            value = task,
-            onValueChange = onTaskChange,
+        Row(
             modifier = Modifier
-                .weight(1f)
-                .padding(end = 8.dp)
-                .focusRequester(focusRequester),  // Apply focusRequester to the TextField
-            keyboardOptions = KeyboardOptions.Default.copy(
-                imeAction = androidx.compose.ui.text.input.ImeAction.Done
-            ),
-            keyboardActions = KeyboardActions(
-                onDone = {
-                    onAddTask()
-                    focusManager.clearFocus()  // Hide the keyboard after task is added
-                }
-            ),
-            decorationBox = { innerTextField ->
-                Box(modifier = Modifier.padding(8.dp)) {
-                    if (task.isEmpty()) {
-                        Text("Enter a task", style = MaterialTheme.typography.bodyLarge)
+                .fillMaxWidth()
+                .imePadding(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            BasicTextField(
+                value = task,
+                onValueChange = onTaskChange,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 8.dp)
+                    .focusRequester(focusRequester),  // Apply focusRequester to the TextField
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        onAddTask()
+                        focusManager.clearFocus()  // Hide the keyboard after task is added
                     }
-                    innerTextField()
+                ),
+                decorationBox = { innerTextField ->
+                    Box(modifier = Modifier.padding(8.dp)) {
+                        if (task.isEmpty()) {
+                            Text("Enter a task", style = MaterialTheme.typography.bodyLarge)
+                        }
+                        innerTextField()
+                    }
                 }
+            )
+            Button(onClick = onAddTask) {
+                Text("Add")
             }
-        )
-        Button(onClick = onAddTask) {
-            Text("Add")
         }
     }
 }
+
 @Composable
 fun TaskList(
     tasks: List<Task>,
     onTaskComplete: (Int, Boolean) -> Unit,
-    onDeleteTask: (Int) -> Unit
+    onDeleteTask: (Int) -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    Column {
+    Column(modifier = modifier) {
         tasks.forEachIndexed { index, task ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 2.dp)
                     .background(color = Color.LightGray)
-                    .clip(RoundedCornerShape(8.dp)),
+                    .clip(RoundedCornerShape(8.dp))
+                    .padding(8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Row(
@@ -191,7 +215,7 @@ fun TaskList(
                 ) {
                     Checkbox(
                         checked = task.isCompleted,
-                        onCheckedChange = { isChecked -> onTaskComplete(index, isChecked) },
+                        onCheckedChange = { isChecked -> onTaskComplete(index, isChecked) }
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
@@ -233,3 +257,15 @@ fun TodoAppPreview() {
     }
 }
 
+
+@Preview(showBackground = true)
+@Composable
+fun TaskInputPreview() {
+    TodoappTheme {
+        TaskInput(
+            task = "Enter a task",
+            onTaskChange = {},
+            onAddTask = {}
+        )
+    }
+}
