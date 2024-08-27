@@ -39,6 +39,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -68,11 +69,10 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TodoApp() {
-    var tasks by remember { mutableStateOf(mutableListOf<Task>()) }
+    var tasks by remember { mutableStateOf(mutableStateListOf<Task>()) }
     var newTask by remember { mutableStateOf("") }
     var isTaskInputVisible by remember { mutableStateOf(false) }
     val categories = List(20) { "Category ${it + 1}" }
@@ -134,7 +134,7 @@ fun TodoApp() {
                     containerColor = MaterialTheme.colorScheme.primary
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Add,
+                        imageVector = Icons.Filled.Add,
                         contentDescription = "Add Task",
                         tint = Color.White
                     )
@@ -149,7 +149,9 @@ fun TodoApp() {
             ) {
                 TaskList(
                     tasks = tasks,
-                    onTaskComplete = { index, isCompleted -> tasks[index] = tasks[index].copy(isCompleted = isCompleted) },
+                    onTaskComplete = { index, isCompleted ->
+                        tasks[index] = tasks[index].copy(isCompleted = isCompleted)
+                    },
                     onDeleteTask = { index -> tasks.removeAt(index) },
                     modifier = Modifier.weight(1f)  // Make the list take up available space
                 )
@@ -222,14 +224,10 @@ fun TaskInput(
         focusRequester.requestFocus()  // Request focus as soon as the TaskInput is composed
     }
 
-    Box(
-        modifier = modifier
-            .fillMaxSize(),
-        contentAlignment = Alignment.BottomCenter
-    ) {
         Row(
             modifier = Modifier
-                .background(color = Color.LightGray),
+                .background(color = Color.LightGray)
+                .padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             BasicTextField(
@@ -258,7 +256,7 @@ fun TaskInput(
                 Text("Add")
             }
         }
-    }
+
 }
 
 @Composable
@@ -297,7 +295,7 @@ fun TaskList(
                 }
                 IconButton(onClick = { onDeleteTask(index) }) {
                     Icon(
-                        imageVector = Icons.Default.Delete,
+                        imageVector = Icons.Filled.Delete,
                         contentDescription = "Delete Task",
                         tint = MaterialTheme.colorScheme.error
                     )
@@ -306,7 +304,6 @@ fun TaskList(
         }
     }
 }
-
 @Preview(showBackground = true)
 @Composable
 fun TodoAppPreview() {
