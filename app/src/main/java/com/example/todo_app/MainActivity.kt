@@ -4,37 +4,38 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,8 +49,11 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.todo_app.ui.theme.TodoappTheme
 
 data class Task(val description: String, var isCompleted: Boolean)
@@ -71,12 +75,53 @@ fun TodoApp() {
     var tasks by remember { mutableStateOf(mutableListOf<Task>()) }
     var newTask by remember { mutableStateOf("") }
     var isTaskInputVisible by remember { mutableStateOf(false) }
+    val categories = List(20) { "Category ${it + 1}" }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
+            var expanded by remember { mutableStateOf(false) }
+
             TopAppBar(
-                title = { Text("To-Do List") }
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+                title = {
+                    TopNavCategories(
+                        categories = categories,
+                        onCategoryClick = { category ->
+                            // Handle category click
+                        },
+                        onOverflowMenuClick = {
+                            expanded = true
+                        }
+                    )
+                },
+                actions = {
+                    IconButton(onClick = { expanded = true }) {
+                        Icon(
+                            imageVector = Icons.Filled.Menu,
+                            contentDescription = "More options",
+                            tint = Color.Black
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        modifier = Modifier.padding(8.dp)
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Menu Item 1") },
+                            onClick = { /* Handle menu item 1 click */ }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Menu Item 2") },
+                            onClick = { /* Handle menu item 2 click */ }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Menu Item 3") },
+                            onClick = { /* Handle menu item 3 click */ }
+                        )
+                    }
+                }
             )
         },
         floatingActionButton = {
@@ -121,14 +166,46 @@ fun TodoApp() {
                             }
                         },
                         modifier = Modifier
-                            .imePadding()  // Adjust layout when the keyboard is visible
-                            .fillMaxWidth()
-                            .padding(16.dp)  // Adjust padding as needed
                     )
                 }
             }
         }
     )
+}
+
+@Composable
+fun TopNavCategories(
+    categories: List<String>,
+    onCategoryClick: (String) -> Unit,
+    onOverflowMenuClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(56.dp) // Standard height for top app bar
+    ) {
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .align(Alignment.Center)
+                .fillMaxWidth()
+        ) {
+            items(categories.size) { index ->
+                Text(
+                    text = categories[index],
+                    fontSize = 14.sp,
+                    color = Color.Black,
+                    modifier = Modifier
+                        .padding(horizontal = 2.dp)
+                        .background(color = Color.LightGray, shape = RoundedCornerShape(24.dp))
+                        .clickable { onCategoryClick(categories[index]) }
+                        .padding(horizontal = 8.dp, vertical = 0.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -145,19 +222,14 @@ fun TaskInput(
         focusRequester.requestFocus()  // Request focus as soon as the TaskInput is composed
     }
 
-    Column(
+    Box(
         modifier = modifier
-            .background(Color.White)  // Optional: Add a background color for better visibility
-            .clip(RoundedCornerShape(8.dp))  // Rounded corners for a clean look
-            .padding(8.dp)  // Add padding inside the container
-            .imePadding()  // Adjust layout when the keyboard is visible
-            .fillMaxWidth()
-            .wrapContentHeight()
+            .fillMaxSize(),
+        contentAlignment = Alignment.BottomCenter
     ) {
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .imePadding(),
+                .background(color = Color.LightGray),
             verticalAlignment = Alignment.CenterVertically
         ) {
             BasicTextField(
@@ -167,9 +239,6 @@ fun TaskInput(
                     .weight(1f)
                     .padding(end = 8.dp)
                     .focusRequester(focusRequester),  // Apply focusRequester to the TextField
-                keyboardOptions = KeyboardOptions.Default.copy(
-                    imeAction = androidx.compose.ui.text.input.ImeAction.Done
-                ),
                 keyboardActions = KeyboardActions(
                     onDone = {
                         onAddTask()
@@ -199,7 +268,10 @@ fun TaskList(
     onDeleteTask: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(modifier = modifier) {
+    Column(
+        modifier = modifier
+            .padding(16.dp) // Add padding around the entire task list
+    ) {
         tasks.forEachIndexed { index, task ->
             Row(
                 modifier = Modifier
@@ -235,37 +307,37 @@ fun TaskList(
     }
 }
 
-//@Preview(showBackground = true)
-//@Composable
-//fun TodoAppPreview() {
-//    TodoappTheme {
-//        TodoApp()
-//    }
-//}
-
 @Preview(showBackground = true)
 @Composable
 fun TodoAppPreview() {
     TodoappTheme {
-        var tasks by remember { mutableStateOf(mutableListOf(
-            Task("Buy groceries", isCompleted = false),
-            Task("Finish Android project", isCompleted = true),
-            Task("Exercise for 30 minutes", isCompleted = false)
-        )) }
-
         TodoApp()
     }
 }
 
+//@Preview(showBackground = true)
+//@Composable
+//fun TodoAppPreview() {
+//    TodoappTheme {
+//        var tasks by remember { mutableStateOf(mutableListOf(
+//            Task("Buy groceries", isCompleted = false),
+//            Task("Finish Android project", isCompleted = true),
+//            Task("Exercise for 30 minutes", isCompleted = false)
+//        )) }
+//
+//        TodoApp()
+//    }
+//}
 
-@Preview(showBackground = true)
-@Composable
-fun TaskInputPreview() {
-    TodoappTheme {
-        TaskInput(
-            task = "Enter a task",
-            onTaskChange = {},
-            onAddTask = {}
-        )
-    }
-}
+
+//@Preview(showBackground = true)
+//@Composable
+//fun TaskInputPreview() {
+//    TodoappTheme {
+//        TaskInput(
+//            task = "Enter a task",
+//            onTaskChange = {},
+//            onAddTask = {}
+//        )
+//    }
+//}
